@@ -15,6 +15,9 @@
   -webkit-transform: translateY(0px);-webkit-transform-style: preserve-3d;
 }
 .J-scroll li{height:40px;line-height: 40px;text-align: center}
+
+#J-scroll2{}
+
 </style>
 </head>
 <body style="background:#333">
@@ -51,140 +54,113 @@
 
 <div class="J-wrap">
   <div id="J-scroll2" class="J-scroll">
-    <ul>
-      <li><a href="#">items block</a></li>
-      <li><a href="#">items block</a></li>
-      <li><a href="#">items block</a></li>
-      <li><a href="#">items block</a></li>
-      <li><a href="#">items block</a></li>
-      <li><a href="#">items block</a></li>
-      <li><a href="#">items block</a></li>
-      <li><a href="#">items block</a></li>
-      <li><a href="#">items block</a></li>
-      <li><a href="#">items block</a></li>
-      <li><a href="#">items block</a></li>
-      <li><a href="#">items block</a></li>
-      <li><a href="#">items block</a></li>
-      <li><a href="#">items block</a></li>
-      <li><a href="#">items block</a></li>
-      <li><a href="#">items block</a></li>
-      <li><a href="#">items block</a></li>
-      <li><a href="#">items block</a></li>
-      <li><a href="#">items block</a></li>
-      <li><a href="#">items block</a></li>
-      <li><a href="#">items block</a></li>
-      <li><a href="#">items block</a></li>
-    </ul>
+    <div style="width:1000px;background:green;height:100px">1000</div>
   </div>
 </div>
 <script>
 ;(function(win,D,undefined){
   
-  function scroller(ele,options){
-    this.lay=D.getElementById(ele);
-    if(!this.lay){return}
-    this.wrapperHeight =this.lay.parentNode.clientHeight;
-    this.scrollerHeight =this.lay.offsetHeight;
+  function scroller(el,opts){
+    var lay=this.lay=typeof el == 'string' ? D.getElementById(el) : el;
+    this.wrapperHeight =lay.parentNode.clientHeight;
+    this.wrapperWidth  =lay.parentNode.clientWidth;
+
+    this.scrollerHeight =lay.offsetHeight;
+    this.scrollerWidth	=lay.offsetWidth;
+
+    //if(this.scrollerHeight<=this.wrapperHeight){return}
+    //if(this.scrollerWeight<=this.wrapperWeight){return}
+
+    this.maxScrollX	= this.wrapperWidth - this.scrollerWidth;
     this.maxScrollY = this.wrapperHeight - this.scrollerHeight;
+
+    lay.style.webkitTransitionTimingFunction = 'cubic-bezier(0.1, 0.57, 0.1, 1)';
+
     this.y = 0;
-    if(this.scrollerHeight<=this.wrapperHeight){return}
+    this.x = 0;
+    this._events = {};
     this.setup();
   };
 
   scroller.prototype={
     setup:function(args){
-
         var type=args?'removeEventListener':'addEventListener';
-
-        args && this.scrollTo(0,0);
+        args && this.scrollTo(0);
         this.lay[type]('touchstart', this, false);
         this.lay[type]('touchmove', this, false);
         this.lay[type]('touchend', this, false);
         this.lay[type]('touchcancel', this, false);
         this.lay[type]('webkitTransitionEnd', this, false);
         win[type]('onorientationchange' in win ? 'orientationchange' : 'resize',this,false);
-
     },
     handleEvent: function(e) {
       switch (e.type) {
-        case 'touchstart': this.onStart(e); break;
-        case 'touchmove': this.onMov(e); break;
+        case 'touchstart': this._start(e); break;
+        case 'touchmove': this._mov(e); break;
         case 'touchcancel' :
-        case 'touchend': this.onEnd(e); break;
-        case 'webkitTransitionEnd':this._transitionEnd(e);break
+        case 'touchend': this._end(e); break;
+        case 'webkitTransitionEnd':this._movend(e);break
         case 'resize':
         case 'orientationchange':this._resize(e);break;
       }
     },
-    onStart:function(e){
-      this.start=true;
-      this._transitionTime();
+    _start:function(e){
       this.startTime = +new Date;
-      if (this.isInTransition) {
-        this._translate(this.getPos().y);
+      if (!!this.isMoving) {
+        this.scrollTo(getPos(this.lay).y)
       }
       this.startY = this.y;
+      this.startX = this.x;
       this.pointY = e.touches[0].pageY;
+      this.pointX = e.touches[0].pageX;
     },
-    onMov:function(e){
-      e.preventDefault();
-      if(this.start){
-        var deltaY = e.touches[0].pageY - this.pointY,timestamp =  +new Date,newY;
-        this.pointY = e.touches[0].pageY;
-        newY = this.y + deltaY;
+    _mov:function(e){
+      //e.preventDefault();
+      var timestamp =  +new Date;
+      var deltaY = e.touches[0].pageY - this.pointY,newY;
+      var deltaX = e.touches[0].pageX - this.pointY,newX;
 
-        if(newY>0||newY<this.maxScrollY){
-          newY=this.y+deltaY/4;
-        }
-        
-        this._translate(newY);
+      this.pointY = e.touches[0].pageY;
+      this.pointX = e.touches[0].pageX;
+
+      newY = this.y + deltaY;
+      newX = this.x + deltaX;
+
+      if(newY>0||newY<this.maxScrollY){
+        newY=this.y+deltaY/4;
       }
+
+      this.scrollTo(newY);
     },
-    onEnd:function(e){
+    _end:function(e){
       var point = e,momentumY,duration = +new Date - this.startTime,newY = Math.round(this.y),
       distanceY = Math.abs(newY - this.startY),time = 0;
-      this.isInTransition = 0;
-      this.start=false;
+      this.isMoving = 0;
       if (this.resetPosition()) {return}
       if (duration < 300) {
         momentumY = momentum(this.y, this.startY, duration, this.maxScrollY,this.wrapperHeight);//可以省略
         newY = momentumY.destination;
         time = Math.max(momentumY.duration);
-        this.isInTransition = 1;
+        this.isMoving = 1;
       }
       if (newY != this.y) {
         this.scrollTo(newY,time);
         return;
       }
-      
     },
-    _transitionEnd:function(){
+    _movend:function(){
       if (this.resetPosition()) {return;}
-      this.isInTransition = 0;
+      this.isMoving = 0;
     },
-    getPos:function () {
-      var matrix = window.getComputedStyle(this.lay, null), x, y;
-      matrix = matrix['-webkit-transform'].split(')')[0].split(', ');
-      console.log(matrix)
-      x = +(matrix[12] || matrix[4]);
-      y = +(matrix[13] || matrix[5]);
-      return {y: y };
-    },
-    _translate: function (y){
-      this.lay.style.webkitTransform ='translateY('+ y + 'px)';
-      this.y = y;
-    },
-    _transitionTimingFunction:function (easing) {
-      this.lay.style.webkitTransitionTimingFunction = 'cubic-bezier(0.1, 0.57, 0.1, 1)';
-    },
-    _transitionTime:function (time) {
-      time = time || 0;
-      this.lay.style.webkitTransitionDuration = time + 'ms';
+    scrollBy:function(y){
+		y = this.y + y;
+		this.scrollTo(y);
     },
     scrollTo:function(y,time){
-        this._transitionTimingFunction();
-        this._transitionTime(time);
-        this._translate(y);
+      time = time || 0;
+      this.lay.style.webkitTransitionDuration = time + 'ms';
+      this.lay.style.webkitTransform ='translate3d(0px,'+y+'px,0px)';
+      this.y = y;
     },
     resetPosition: function (time) {
       var y = this.y;time = time || 0;
@@ -201,7 +177,6 @@
       this.maxScrollY = this.wrapperHeight - this.scrollerHeight;
       if(this.scrollerHeight<=this.wrapperHeight){
         this.setup('off');
-        return;
       }else{
         this.setup();
         this.resetPosition();
@@ -213,6 +188,18 @@
         this.resizeTimeout = setTimeout(function () {
            that.refresh();
         },17);
+    },
+    on:function(type,fn){
+      (this._events[n] = this._events[n] || []).push(fn);
+    },
+    trigger:function(type){
+      var list=this._events[type],fn;
+      if(list){
+        list=list.slice();
+        while((fn=list.shift())){
+          fn.apply(this,arguments)
+        }
+      }
     },
     html:function(str){
       this.refresh()
@@ -242,13 +229,23 @@
         duration: duration
       }
   }
+  function getPos(lay) {
+      var matrix = win.getComputedStyle(lay, null), x, y;
+      matrix = matrix['-webkit-transform'].split(')')[0].split(', ');
+      console.log(matrix)
+      x = +(matrix[12] || matrix[4]);
+      y = +(matrix[13] || matrix[5]);
+      return {y: y };
+    }
 
   window.scroller=scroller;
 
 })(window,document);
 
 
-var scroll=new scroller('J-scroll');
+var scroll=new scroller('J-scroll',{
+  x:true
+});
 var scroll2=new scroller('J-scroll2');
 </script>
 </body>
