@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head data-page="user_login" path="">
+<title>scroller</title>
+<style type="text/css">
+*{margin:0;padding:0;border:none;color:white;}
+.J-wrap{
+  -webkit-transform-style: preserve-3d;-webkit-backface-visibility:hidden;
+  position:relative;overflow:hidden;height:320px;border:1px solid white;
+  width:300px;
+  float:left;margin:0 10px 0 0
+}
+.J-scroll{
+  position:absolute;width:100%;
+  -webkit-backface-visibility:hidden;-webkit-perspective: 1000;
+  -webkit-transform: translateY(0px);-webkit-transform-style: preserve-3d;
+}
+.J-scroll li{height:40px;line-height: 40px;text-align: center}
+
+
+
+</style>
+</head>
+<body style="background:#333">
+<div class="J-wrap">
+  <div id="J-scroll" class="J-scroll">
+    <ul>
+      <li><a href="#">items block</a></li>
+      <li><a href="#">items block</a></li>
+      <li><a href="#">items block</a></li>
+      <li><a href="#">items block</a></li>
+      <li><a href="#">items block</a></li>
+      <li><a href="#">items block</a></li>
+      <li><a href="#">items block</a></li>
+      <li><a href="#">items block</a></li>
+      <li><a href="#">items block</a></li>
+      <li><a href="#">items block</a></li>
+      <li><a href="#">items block</a></li>
+      <li><a href="#">items block</a></li>
+      <li><a href="#">items block</a></li>
+      <li><a href="#">items block</a></li>
+      <li><a href="#">items block</a></li>
+      <li><a href="#">items block</a></li>
+      <li><a href="#">items block</a></li>
+      <li><a href="#">items block</a></li>
+      <li><a href="#">items block</a></li>
+      <li><a href="#">items block</a></li>
+      <li><a href="#">items block</a></li>
+      <li><a href="#">items block</a></li>
+    </ul>
+  </div>
+</div>
+<script>
+
+var getPrefix = function() {//-webkit-
+	var sty = document.body.style;
+	var vendorPrefixes = ['Moz','Webkit','Khtml','O','ms'],
+		len = vendorPrefixes.length,
+		vendor = '';
+
+	while (len--)
+		if ((vendorPrefixes[len] + 'Transform') in sty)
+			vendor='-'+vendorPrefixes[len].toLowerCase()+'-';
+
+	return vendor;
+}
+
+
+</script>
+
+<script>
+;(function(win,D,undefined){
+
+var isTouch = 'ontouchstart' in win;
+
+function momentum(current, start, time, lowerMargin, wrapperSize) {
+  /* from iscroll */
+  var distance = current - start,
+  speed = Math.abs(distance) / time,
+  destination,
+  duration,
+  deceleration = 0.00096;
+  destination = current + (speed * speed) / (2 * deceleration) * (distance < 0 ? -1 : 1);
+  duration = speed / deceleration;
+  if (destination < lowerMargin) {
+	destination = wrapperSize ? lowerMargin - (wrapperSize / 2.5 * (speed / 8)) : lowerMargin;
+	distance = Math.abs(destination - current);
+	duration = distance / speed;
+  } else if (destination > 0) {
+	destination = wrapperSize ? wrapperSize / 2.5 * (speed / 8) : 0;
+	distance = Math.abs(current) + destination;
+	duration = distance / speed;
+  }
+  return {
+	destination: Math.round(destination),
+	duration: duration
+  }
+}
+
+function getPos(lay) {
+  var matrix = win.getComputedStyle(lay, null), x, y;
+  matrix = matrix['-webkit-transform'].split(')')[0].split(', ');
+  x = +(matrix[12] || matrix[4]);
+  y = +(matrix[13] || matrix[5]);
+  return {y: y ,x:x};
+}
+
+var direction=function(flag){
+
+}
+
+
+function Scroller(el,opts){
+    var lay=this.lay=typeof el == 'string' ? D.getElementById(el) : el;
+	lay.style.webkitTransitionTimingFunction = 'cubic-bezier(0.1, 0.57, 0.1, 1)';
+    this.y = 0;this.x = 0;
+	this.init(opts);
+    this.setup();
+};
+
+Scroller.prototype={
+	init:function(opts){
+		var pre="translate3d";
+		var flag= this.flag=opts.H ? true:false;
+		this.wHW= flag ? this.lay.parentNode.clientHeight:this.lay.parentNode.clientWidth;
+		this.sHW= flag ? this.lay.offsetHeight:this.lay.offsetWidth;
+		this.maxScrollXY = this.wHW - this.sHW;
+		this.trans=(function(self){
+			return flag ? function(y){
+				self.y=y;
+				return pre+'(0px,'+y+'px,0px)'
+			}:function(x){
+				self.x=x;
+				return pre+'('+x+'px,0px,0px)'
+			}
+		})(this);
+	},
+	setup:function(args){
+        var type=args?'removeEventListener':'addEventListener';
+        args && this.scrollTo(0);
+        this.lay[type]('touchstart', this, false);
+        this.lay[type]('touchmove', this, false);
+        this.lay[type]('touchend', this, false);
+        this.lay[type]('touchcancel', this, false);
+        this.lay[type]('webkitTransitionEnd', this, false);
+        win[type]('onorientationchange' in win ? 'orientationchange':'resize',this,false);
+    },
+	handleEvent: function(e) {
+      switch (e.type) {
+        case 'touchstart': this._start(e); break;
+        case 'touchmove': this._mov(e); break;
+        case 'touchcancel' :
+        case 'touchend': this._end(e); break;
+        case 'webkitTransitionEnd':this._movend(e);break
+        case 'resize':
+        case 'orientationchange':this._resize(e);break;
+      }
+	},
+	_start:function(e){
+	  //if(e.target.tagName=="A"){return}
+	  this.startTime = +new Date;
+	  if (!!this.isMoving) {
+		this.scrollTo(getPos(this.lay).y);
+	  }
+	  this.startY = this.y;
+	  this.startX = this.x;
+	  this.pointY = e.touches[0].pageY;
+	  this.pointX = e.touches[0].pageX;
+	},
+	_mov:function(e){
+	  var eth=e.touches[0];
+      e.preventDefault();
+      var deltaY = eth.pageY - this.pointY,newY;
+      var deltaX = eth.pageX - this.pointX,newX;
+      this.pointY = eth.pageY;
+      this.pointX = eth.pageX;
+      newY = this.y + deltaY;
+      newX = this.x + deltaX;
+      this.scrollTo(this.flag ? newY : newX);
+    },
+	_end:function(){
+		 this.isMoving = 0;
+	},
+	_movend:function(){
+		 
+	},
+	scrollTo:function(xy,time){
+      this.lay.style.webkitTransitionDuration = time||0 + 'ms';
+	  this.lay.style.webkitTransform=this.trans(xy);
+
+	}
+}
+
+
+window.Scroller=Scroller;
+
+})(window,document);
+
+
+
+var me=new Scroller('J-scroll',{
+	H:true,
+	continues:false
+});
+
+
+
+</script>
+</body>
+</html>

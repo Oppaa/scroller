@@ -8,6 +8,7 @@
   -webkit-transform-style: preserve-3d;-webkit-backface-visibility:hidden;
   position:relative;overflow:hidden;height:320px;border:1px solid white;
   width:300px;
+  float:left;margin:0 10px 0 0
 }
 .J-scroll{
   position:absolute;width:100%;
@@ -16,7 +17,7 @@
 }
 .J-scroll li{height:40px;line-height: 40px;text-align: center}
 
-#J-scroll2{}
+
 
 </style>
 </head>
@@ -50,29 +51,31 @@
   </div>
 </div>
 
-<br/><br/>
 
-<div class="J-wrap">
-  <div id="J-scroll2" class="J-scroll">
-    <div style="width:1000px;background:green;height:100px">1000</div>
-  </div>
-</div>
+
 <script>
 ;(function(win,D,undefined){
   
   function scroller(el,opts){
     var lay=this.lay=typeof el == 'string' ? D.getElementById(el) : el;
-    this.wrapperHeight =lay.parentNode.clientHeight;
-    this.wrapperWidth  =lay.parentNode.clientWidth;
+    var dir=opts.H;
+    this.wHW=dir?lay.parentNode.clientHeight:lay.parentNode.clientWidth;
 
-    this.scrollerHeight =lay.offsetHeight;
-    this.scrollerWidth	=lay.offsetWidth;
+    //this.wrapperHeight =lay.parentNode.clientHeight;
+    //this.wrapperWidth  =lay.parentNode.clientWidth;
+
+    this.sHW=dir?lay.offsetHeight:lay.offsetWidth;
+
+   // this.scrollerHeight =lay.offsetHeight;
+   // this.scrollerWidth	=lay.offsetWidth;
 
     //if(this.scrollerHeight<=this.wrapperHeight){return}
     //if(this.scrollerWeight<=this.wrapperWeight){return}
 
-    this.maxScrollX	= this.wrapperWidth - this.scrollerWidth;
-    this.maxScrollY = this.wrapperHeight - this.scrollerHeight;
+    this.maxScrollXY=this.wHW-this.sHW;
+
+   // this.maxScrollX	= this.wrapperWidth - this.scrollerWidth;
+   // this.maxScrollY = this.wrapperHeight - this.scrollerHeight;
 
     lay.style.webkitTransitionTimingFunction = 'cubic-bezier(0.1, 0.57, 0.1, 1)';
 
@@ -107,7 +110,7 @@
     _start:function(e){
       this.startTime = +new Date;
       if (!!this.isMoving) {
-        this.scrollTo(getPos(this.lay).y)
+        this.scrollTo(getPos(this.lay).y);//
       }
       this.startY = this.y;
       this.startX = this.x;
@@ -116,7 +119,6 @@
     },
     _mov:function(e){
       //e.preventDefault();
-      var timestamp =  +new Date;
       var deltaY = e.touches[0].pageY - this.pointY,newY;
       var deltaX = e.touches[0].pageX - this.pointY,newX;
 
@@ -133,8 +135,7 @@
       this.scrollTo(newY);
     },
     _end:function(e){
-      var point = e,momentumY,duration = +new Date - this.startTime,newY = Math.round(this.y),
-      distanceY = Math.abs(newY - this.startY),time = 0;
+      var momentumY,duration = +new Date - this.startTime,newY = Math.round(this.y),time = 0;
       this.isMoving = 0;
       if (this.resetPosition()) {return}
       if (duration < 300) {
@@ -145,7 +146,6 @@
       }
       if (newY != this.y) {
         this.scrollTo(newY,time);
-        return;
       }
     },
     _movend:function(){
@@ -232,10 +232,9 @@
   function getPos(lay) {
       var matrix = win.getComputedStyle(lay, null), x, y;
       matrix = matrix['-webkit-transform'].split(')')[0].split(', ');
-      console.log(matrix)
       x = +(matrix[12] || matrix[4]);
       y = +(matrix[13] || matrix[5]);
-      return {y: y };
+      return {y: y ,x:x};
     }
 
   window.scroller=scroller;
@@ -244,9 +243,9 @@
 
 
 var scroll=new scroller('J-scroll',{
-  x:true
+  H:true
 });
-var scroll2=new scroller('J-scroll2');
+
 </script>
 </body>
 </html>
