@@ -1,3 +1,3 @@
-迷你版 iscroll
+hi ssh
 ========
 learn from iscroll
